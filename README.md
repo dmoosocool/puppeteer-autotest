@@ -1,1 +1,1 @@
-build auto test for cooperation-html5.
+build auto test for webapps.
