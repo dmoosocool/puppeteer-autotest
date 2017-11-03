@@ -1,0 +1,1 @@
+build auto test for cooperation-html5.

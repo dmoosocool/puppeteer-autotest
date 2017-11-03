@@ -1,0 +1,17 @@
+{
+  "name": "cooperation-html5-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node main.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^2.3.0",
+    "moment": "^2.19.1",
+    "puppeteer": "^0.12.0",
+    "q": "^1.5.1"
+  }
+}
