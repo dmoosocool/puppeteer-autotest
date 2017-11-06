@@ -1,5 +1,6 @@
 const chalk = require('chalk');
 const puppeteer = require('puppeteer');
+const fs = require('fs');
 const Config = require('../config/config');
 
 class Tools {
@@ -35,26 +36,38 @@ class Tools {
      * ```
      */
     static log(content, type) {
+        let updatedContent = '';
+        let logPath = process.env.logPath;
         switch (type) {
             case 'title':
-                console.log(chalk.green(`${chalk.bold('标题:' + content)}`));
+                updatedContent = '标题:' + content;
+                console.log(chalk.green(`${chalk.bold(updatedContent)}`));
                 break;
 
             case 'warning':
-                console.log(chalk.red(`\t${chalk.bold('警告:' + content)}\t`));
+                updatedContent = '警告:' + content;
+                console.log(chalk.red(`\t${chalk.bold(updatedContent)}\t`));
                 break;
 
             case 'error':
-                console.log(chalk.black(`\t${chalk.bgRed.bold('错误:' + content)}\t`));
+                updatedContent = '错误:' + content;
+                console.log(chalk.black(`\t${chalk.bgRed.bold(updatedContent)}\t`));
                 break;
 
             case 'info':
-                console.log(chalk.cyan(`\t${chalk.bold('描述:' + content)}\t`));
+                updatedContent = '描述:' + content;
+                console.log(chalk.cyan(`\t${chalk.bold(updatedContent)}\t`));
                 break;
             default:
-                console.log(chalk.cyan(`\t${chalk.bold('描述:' + content)}\t`));
+                updatedContent = '描述:' + content;
+                console.log(chalk.cyan(`\t${chalk.bold(updatedContent)}\t`));
                 break;
         }
+
+        fs.writeFileSync(`${logPath}/log.txt`, updatedContent + '\n', {
+            encoding: 'utf8',
+            flag: 'a+'
+        });
     }
 
     /**
@@ -62,14 +75,17 @@ class Tools {
      *
      * @param {string} title 流程名称
      * @param {string} link  流程的入口Url地址
-     * @param {string} logPath 日志路径
      * @param {function} callback 回调函数
      */
-    static async beginProcedure(title, link, logPath, callback) {
+    static async beginProcedure(title, link, callback) {
+
         // 打印log
         this.log(title, 'title');
+
         let defaultConfig = await Config.getDefault();
         let page = await defaultConfig.page;
+        let logPath = process.env.logPath;
+
 
         // 打开流程入口Url.
         await page.goto(link);
@@ -96,11 +112,12 @@ class Tools {
      * @param {object} page 当前流程的标签页
      * @param {string} title 步骤名称
      * @param {number} code 步骤码
-     * @param {string} logPath 日志路径
      * @param {function} callback 回调函数
-     * @param {function} complateCallback 完成回调
      */
-    static async beginStep(procedure, page, title, code, logPath, callback, complateCallback) {
+    static async beginStep(procedure, page, title, code, callback) {
+
+        let logPath = process.env.logPath;
+
         // 延迟2秒执行步骤.
         await this.timeout(2000);
 
@@ -113,15 +130,39 @@ class Tools {
             content: '*{ font-family: cursive !important; }'
         });
 
-        // 执行具体步骤.
-        await callback();
+        await this.timeout(1000);
 
         // 执行步骤完毕将步骤截图到日志文件中.
         await page.screenshot({
             path: `${logPath}/${code}${title}.png`
         });
 
-        await complateCallback();
+        // 执行具体步骤.
+        await callback();
+
+    }
+
+    /**
+     * 队列执行流程数组.
+     *
+     * @param {Array} stepArr  流程数组
+     * @param {int} index   开始执行的下标
+     * @param {string} procedure 流程名称
+     * @param {Page} page  puppeteer Page对象
+     */
+    static async runStep(stepArr, index, procedure, page) {
+        if (index == stepArr.length) {
+            return;
+        }
+        let logPath = process.env.logPath;
+
+        let item = stepArr[index],
+            config = item.getConfig();
+
+        this.beginStep(procedure, page, config.title, config.code, () => {
+            index++;
+            item.stepCallback(page, () => this.runStep(stepArr, index, procedure, page));
+        });
     }
 }
 module.exports = Tools;
