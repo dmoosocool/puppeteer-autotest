@@ -112,8 +112,8 @@ class loginCnodejs {
             });
 
             log('------- 输入正确的账号密码 -------');
-            await page.type('#name', 'anjostar', { delay: 35 });
-            await page.type('#pass', 'woshinidejia.', { delay: 35 });
+            await page.type('#name', '输入你的账号', { delay: 35 });
+            await page.type('#pass', '输入你的密码', { delay: 35 });
 
             // 截图正确的账号密码提示信息
             await page.screenshot({
