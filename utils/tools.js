@@ -75,35 +75,42 @@ class Tools {
      *
      * @param {string} title 流程名称
      * @param {string} link  流程的入口Url地址
+     * @param {boolean} isRestful 是否是restful接口.
      * @param {function} callback 回调函数
      */
-    static async beginProcedure(title, link, callback) {
+    static async beginProcedure(title, link, isRestful, callback) {
 
         // 打印log
         this.log(title, 'title');
-
         let defaultConfig = await Config.getDefault();
         let page = await defaultConfig.page;
         let logPath = process.env.logPath;
 
-
         // 打开流程入口Url.
-        await page.goto(link);
+        if (!isRestful) {
+            await page.goto(link, { timeout: 3000 }).then(() => { }, () => {
+                this.log('跳转页面:' + link + '超时', 'warining');
+            });
 
-        // 延迟2秒
-        await this.timeout(2000);
-        // mac 上chromium v64版本字体有问题 强行设置字体避免乱码.
-        await page.mainFrame().addStyleTag({
-            content: '*{ font-family: cursive !important; }'
-        });
+            await page.waitForNavigation({ timeout: 3000 }).then(() => {
 
-        // 执行步骤完毕将步骤截图到日志文件中.
-        await page.screenshot({
-            path: `${logPath}/0.0${title} - 流程开始.png`
-        });
+            }, () => {
+                this.log(`加载页面资源超时: ${link}`, 'warning');
+            });
+
+            // mac 上chromium v64版本字体有问题 强行设置字体避免乱码.
+            await page.mainFrame().addStyleTag({
+                content: '*{ font-family: cursive !important; }'
+            });
+
+            // 执行步骤完毕将步骤截图到日志文件中.
+            await page.screenshot({
+                path: `${logPath}/0.0${title} - 流程开始.png`
+            });
+        }
 
         // 执行具体流程.
-        await callback(page);
+        await callback(page, isRestful);
     }
 
     /**
@@ -114,28 +121,25 @@ class Tools {
      * @param {number} code 步骤码
      * @param {function} callback 回调函数
      */
-    static async beginStep(procedure, page, title, code, callback) {
+    static async beginStep(procedure, page, title, code, isRestful, callback) {
 
         let logPath = process.env.logPath;
-
-        // 延迟2秒执行步骤.
-        await this.timeout(2000);
 
         // 打印log
         this.log(title, 'title');
 
-        // 通用步骤设置.
-        // mac 上chromium v64版本字体有问题 强行设置字体避免乱码.
-        await page.mainFrame().addStyleTag({
-            content: '*{ font-family: cursive !important; }'
-        });
+        if (!isRestful) {
+            // 通用步骤设置.
+            // mac 上chromium v64版本字体有问题 强行设置字体避免乱码.
+            await page.mainFrame().addStyleTag({
+                content: '*{ font-family: cursive !important; }'
+            });
 
-        await this.timeout(1000);
-
-        // 执行步骤完毕将步骤截图到日志文件中.
-        await page.screenshot({
-            path: `${logPath}/${code}${title}.png`
-        });
+            // 执行步骤完毕将步骤截图到日志文件中.
+            await page.screenshot({
+                path: `${logPath}/${code}${title}.png`
+            });
+        }
 
         // 执行具体步骤.
         await callback();
@@ -150,7 +154,7 @@ class Tools {
      * @param {string} procedure 流程名称
      * @param {Page} page  puppeteer Page对象
      */
-    static async runStep(stepArr, index, procedure, page) {
+    static async runStep(stepArr, index, procedure, page, isRestful) {
         if (index == stepArr.length) {
             return;
         }
@@ -159,7 +163,7 @@ class Tools {
         let item = stepArr[index],
             config = item.getConfig();
 
-        this.beginStep(procedure, page, config.title, config.code, () => {
+        this.beginStep(procedure, page, config.title, config.code, isRestful, () => {
             index++;
             item.stepCallback(page, () => this.runStep(stepArr, index, procedure, page));
         });

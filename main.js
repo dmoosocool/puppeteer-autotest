@@ -1,12 +1,19 @@
-// 默认开户流程
-const normal = require('./procedure/normal');
+// 页面测试
+const pageTest = require('./procedure/pageTest');
+
+// restful测试
+const restfulTest = require('./procedure/restfulTest');
 
 // 流程队列.
 let procedureArr = [
-    normal
+    pageTest,
+    // restfulTest
 ];
 
 // 执行流程队列.
-procedureArr.forEach(item => {
-    item();
-});
+procedureArr.reduce(async (promise, value) => {
+    return promise.then(async () => {
+        await value();
+        return Promise.resolve();
+    });
+}, Promise.resolve());
