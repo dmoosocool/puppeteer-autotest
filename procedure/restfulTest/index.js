@@ -19,7 +19,7 @@ if (!fs.existsSync(logPath)) {
 process.env.logPath = logPath;
 
 // 保存token.
-const accessToken = '956e9615-4163-4573-af0e-9b91f0f1f036';
+const accessToken = '填写你的accessToken';
 process.env.accessToken = accessToken;
 
 // 保存api地址.
