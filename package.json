@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "chalk": "^2.3.0",
-    "moment": "^2.29.2",
+    "moment": "^2.29.4",
     "puppeteer": "^1.13.0"
   }
 }
